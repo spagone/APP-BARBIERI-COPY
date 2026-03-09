@@ -9,3 +9,4 @@ server/node_modules/
 
 barber-app/.expo/
 
+.runtime-logs/
