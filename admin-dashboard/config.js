@@ -1,3 +1,3 @@
 window.MYBARBER_CONFIG = {
-  apiBaseUrl: 'https://1cffe4841845e1.lhr.life',
+  apiBaseUrl: 'https://cd6c7568b63d65.lhr.life',
 };

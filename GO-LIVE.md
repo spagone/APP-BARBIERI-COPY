@@ -4,6 +4,18 @@ Questa guida mette online **API** + **dashboard admin** in pochi minuti, continu
 
 ## 1) Backend online (Render)
 
+Metodo veloce consigliato (URL stabili):
+
+1. Vai su Render -> `New` -> `Blueprint`
+2. Seleziona il repo: usera `render.yaml` gia presente.
+3. Crea i servizi:
+   - `mybarber-api` (URL fisso: `https://mybarber-api.onrender.com`)
+   - `mybarber-admin` (URL fisso: `https://mybarber-admin.onrender.com`)
+   - `mybarber-app` (URL fisso: `https://mybarber-app.onrender.com`)
+4. Inserisci i secret richiesti (`DATABASE_URL`, `JWT_SECRET`, ecc.) quando Render li chiede.
+
+Se preferisci manuale, continua con i passaggi sotto.
+
 1. Vai su Render: `https://render.com`
 2. `New` -> `Web Service`
 3. Collega il repo `APP-BARBIERI`
