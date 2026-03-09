@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  client
+  barber
+  admin
+}
+
+model User {
+  id                         String    @id @default(cuid())
+  name                       String
+  email                      String    @unique
+  password                   String
+  role                       UserRole  @default(client)
+  googleSub                  String?   @unique
+  appleSub                   String?   @unique
+  facebookId                 String?   @unique
+  avatarUri                  String?
+  shop                       Json?
+  lastLoginAt                DateTime?
+  loginCount                 Int       @default(0)
+  emailVerified              Boolean   @default(false)
+  isBlocked                  Boolean   @default(false)
+  blockedAt                  DateTime?
+  blockedReason              String?
+  refreshTokenHash           String?
+  refreshTokenExpiresAt      DateTime?
+  passwordResetTokenHash     String?
+  passwordResetExpiresAt     DateTime?
+  emailVerificationTokenHash String?
+  emailVerificationExpiresAt DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  @@index([role])
+  @@index([isBlocked])
+  @@index([emailVerified])
+  @@index([googleSub])
+  @@index([appleSub])
+  @@index([facebookId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorUserId  String
+  actorEmail   String
+  action       String
+  targetUserId String?
+  metadata     Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([actorUserId])
+  @@index([actorEmail])
+  @@index([action])
+  @@index([targetUserId])
+  @@index([createdAt])
+}

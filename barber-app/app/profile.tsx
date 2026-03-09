@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -11,7 +12,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,25 +19,6 @@ import BottomBar from '../components/BottomBar';
 import { clearUser, getUser, updateUserAvatar } from './store/userStore';
 
 type InfoIcon = 'mail-outline' | 'person-outline' | 'star-outline' | 'storefront-outline' | 'location-outline';
-
-const AVATAR_PRESETS = [
-  {
-    id: 'p1',
-    uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'p2',
-    uri: 'https://images.unsplash.com/photo-1607746882042-944635dfe10e?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'p3',
-    uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
-  },
-  {
-    id: 'p4',
-    uri: 'https://images.unsplash.com/photo-1614289371518-722f2615943d?auto=format&fit=crop&w=300&q=80',
-  },
-];
 
 function InfoRow({ icon, label, value }: { icon: InfoIcon; label: string; value: string }) {
   return (
@@ -126,22 +107,51 @@ export default function Page() {
     setAvatarModalVisible(false);
   };
 
-  const saveAvatar = () => {
+  const pickAvatarFromGallery = async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Permesso negato', 'Consenti l\'accesso alla galleria per scegliere la foto profilo.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (result.canceled || result.assets.length === 0) {
+        return;
+      }
+
+      setAvatarDraft(result.assets[0].uri);
+    } catch {
+      Alert.alert('Errore', 'Non sono riuscito ad aprire la galleria. Riprova.');
+    }
+  };
+
+  const saveAvatar = async () => {
     const next = avatarDraft.trim();
 
     if (!next) {
-      updateUserAvatar(null);
+      const removeResult = await updateUserAvatar(null);
+      if (!removeResult.ok) {
+        Alert.alert('Errore', removeResult.message);
+        return;
+      }
+
       setAvatarUriLocal('');
       closeAvatarModal();
       return;
     }
 
-    if (!/^https?:\/\/.+/i.test(next)) {
-      Alert.alert('Link non valido', 'Inserisci un URL immagine che inizi con http:// o https://');
+    const saveResult = await updateUserAvatar(next);
+    if (!saveResult.ok) {
+      Alert.alert('Errore', saveResult.message);
       return;
     }
 
-    updateUserAvatar(next);
     setAvatarUriLocal(next);
     closeAvatarModal();
   };
@@ -278,33 +288,27 @@ export default function Page() {
         <Pressable style={styles.modalBackdrop} onPress={closeAvatarModal} />
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Foto profilo</Text>
-          <Text style={styles.modalSub}>Incolla il link di una foto o scegli un preset.</Text>
+          <Text style={styles.modalSub}>Scegli una foto dalla galleria del dispositivo.</Text>
 
-          <TextInput
-            value={avatarDraft}
-            onChangeText={setAvatarDraft}
-            placeholder="https://..."
-            placeholderTextColor="#6f6f6f"
-            style={styles.modalInput}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+          <View style={styles.modalPreviewWrap}>
+            {avatarDraft.trim() ? (
+              <Image source={{ uri: avatarDraft }} style={styles.modalPreviewImage} resizeMode="cover" />
+            ) : (
+              <View style={styles.modalPreviewEmpty}>
+                <Ionicons name="image-outline" size={30} color={GOLD} />
+                <Text style={styles.modalPreviewEmptyText}>Nessuna foto selezionata</Text>
+              </View>
+            )}
+          </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.presetsRow}>
-            {AVATAR_PRESETS.map((preset) => {
-              const active = avatarDraft.trim() === preset.uri;
-              return (
-                <TouchableOpacity
-                  key={preset.id}
-                  style={[styles.presetThumbWrap, active && styles.presetThumbWrapActive]}
-                  onPress={() => setAvatarDraft(preset.uri)}
-                  activeOpacity={0.9}
-                >
-                  <Image source={{ uri: preset.uri }} style={styles.presetThumb} resizeMode="cover" />
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          <TouchableOpacity
+            style={[styles.secondaryButton, styles.modalPickerButton]}
+            onPress={pickAvatarFromGallery}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="images-outline" size={18} color="#f1f1f1" />
+            <Text style={styles.secondaryButtonText}>Scegli dalla galleria</Text>
+          </TouchableOpacity>
 
           <View style={styles.modalActions}>
             <TouchableOpacity
@@ -719,35 +723,36 @@ const styles = StyleSheet.create({
     color: '#a4a4a4',
     lineHeight: 18,
   },
-  modalInput: {
+  modalPreviewWrap: {
+    width: '100%',
+    height: 168,
     borderWidth: 1,
     borderColor: '#2f2f2f',
-    borderRadius: 12,
-    backgroundColor: '#101010',
-    color: '#f4f4f4',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontWeight: '700',
-  },
-  presetsRow: {
-    gap: 10,
-    paddingRight: 6,
-    marginTop: 2,
-  },
-  presetThumbWrap: {
-    width: 62,
-    height: 62,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#2f2f2f',
     overflow: 'hidden',
+    backgroundColor: '#101010',
   },
-  presetThumbWrapActive: {
-    borderColor: GOLD,
-  },
-  presetThumb: {
+  modalPreviewImage: {
     width: '100%',
     height: '100%',
+  },
+  modalPreviewEmpty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  modalPreviewEmptyText: {
+    color: '#a4a4a4',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  modalPickerButton: {
+    marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   modalActions: {
     marginTop: 4,

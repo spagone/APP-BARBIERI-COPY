@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyBarber Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Manrope:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-a"></div>
+    <div class="bg-shape bg-shape-b"></div>
+
+    <main class="page">
+      <section id="login-panel" class="card login-card">
+        <p class="kicker">Admin Control Room</p>
+        <h1>MyBarber Admin</h1>
+        <p class="subtitle">Accesso dedicato a gestione account, ruoli e sicurezza utenti.</p>
+
+        <label class="field-label" for="api-base-url">API Base URL</label>
+        <input id="api-base-url" class="input" type="text" placeholder="https://api.barberapp.com" />
+
+        <label class="field-label" for="email">Email Admin</label>
+        <input id="email" class="input" type="email" placeholder="admin@barberapp.com" />
+
+        <label class="field-label" for="password">Password</label>
+        <input id="password" class="input" type="password" placeholder="••••••••" />
+
+        <button id="login-btn" class="btn btn-primary">Entra nella Dashboard</button>
+      </section>
+
+      <section id="dashboard-panel" class="hidden">
+        <header class="topbar card">
+          <div>
+            <p class="kicker">Live Console</p>
+            <h2>Account Management</h2>
+            <p id="admin-identity" class="subtitle"></p>
+            <div class="live-meta">
+              <span id="live-indicator" class="live-indicator">Auto-refresh OFF</span>
+              <span id="last-sync" class="last-sync">Ultimo aggiornamento: --</span>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <button id="refresh-all-btn" class="btn btn-secondary">Aggiorna</button>
+            <button id="logout-btn" class="btn btn-danger">Logout</button>
+          </div>
+        </header>
+
+        <section class="stats-grid">
+          <article class="card stat">
+            <span class="stat-label">Utenti Totali</span>
+            <strong id="stat-total-users" class="stat-value">-</strong>
+          </article>
+          <article class="card stat">
+            <span class="stat-label">Clienti</span>
+            <strong id="stat-total-clients" class="stat-value">-</strong>
+          </article>
+          <article class="card stat">
+            <span class="stat-label">Barbieri</span>
+            <strong id="stat-total-barbers" class="stat-value">-</strong>
+          </article>
+          <article class="card stat">
+            <span class="stat-label">Admin</span>
+            <strong id="stat-total-admins" class="stat-value">-</strong>
+          </article>
+          <article class="card stat">
+            <span class="stat-label">Bloccati</span>
+            <strong id="stat-blocked-users" class="stat-value">-</strong>
+          </article>
+          <article class="card stat">
+            <span class="stat-label">Email Verificate</span>
+            <strong id="stat-verified-users" class="stat-value">-</strong>
+          </article>
+        </section>
+
+        <section class="card users-card">
+          <div class="section-head">
+            <h3>Utenti</h3>
+            <div class="filters">
+              <input id="search-input" class="input compact" type="text" placeholder="Cerca per nome/email" />
+              <select id="role-filter" class="input compact">
+                <option value="">Tutti i ruoli</option>
+                <option value="client">Client</option>
+                <option value="barber">Barber</option>
+                <option value="admin">Admin</option>
+              </select>
+              <select id="status-filter" class="input compact">
+                <option value="">Tutti gli stati</option>
+                <option value="active">Attivi</option>
+                <option value="blocked">Bloccati</option>
+              </select>
+              <button id="apply-filters-btn" class="btn btn-secondary">Applica filtri</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table" id="users-table">
+              <thead>
+                <tr>
+                  <th>Utente</th>
+                  <th>Ruolo</th>
+                  <th>Stato</th>
+                  <th>Ultimo Login</th>
+                  <th>Registrato</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card logs-card">
+          <div class="section-head">
+            <h3>Audit Logs</h3>
+            <button id="refresh-logs-btn" class="btn btn-secondary">Ricarica Log</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Quando</th>
+                  <th>Admin</th>
+                  <th>Azione</th>
+                  <th>Target</th>
+                  <th>Dettagli</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

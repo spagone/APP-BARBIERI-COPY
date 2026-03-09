@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { setUser } from './store/userStore';
+import { registerUser } from './store/userStore';
 
 const GOLD = '#c59d5f';
 const BG = '#080808';
@@ -119,7 +119,7 @@ export default function Register() {
 
   const isValidEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     const trimmedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
     const trimmedPassword = password.trim();
@@ -142,25 +142,30 @@ export default function Register() {
       return;
     }
 
-    if (role === 'barber') {
-      setUser({
-        name: trimmedName,
-        email: normalizedEmail,
-        password: trimmedPassword,
-        role: 'barber',
-        shop: {
-          shopName: trimmedShopName,
-          shopAddress: trimmedShopAddress,
-          shopCity: trimmedShopCity,
-        },
-      });
-    } else {
-      setUser({
-        name: trimmedName,
-        email: normalizedEmail,
-        password: trimmedPassword,
-        role: 'client',
-      });
+    const userToRegister =
+      role === 'barber'
+        ? {
+            name: trimmedName,
+            email: normalizedEmail,
+            password: trimmedPassword,
+            role: 'barber' as const,
+            shop: {
+              shopName: trimmedShopName,
+              shopAddress: trimmedShopAddress,
+              shopCity: trimmedShopCity,
+            },
+          }
+        : {
+            name: trimmedName,
+            email: normalizedEmail,
+            password: trimmedPassword,
+            role: 'client' as const,
+          };
+
+    const result = await registerUser(userToRegister);
+    if (!result.ok) {
+      setErrorMessage(result.message);
+      return;
     }
 
     setErrorMessage('');

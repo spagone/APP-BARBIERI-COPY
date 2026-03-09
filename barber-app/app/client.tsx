@@ -16,7 +16,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { clearUser, getUser } from './store/userStore';
+import {
+  clearUser,
+  getUser,
+  sendBookingCancellationEmail,
+  sendBookingConfirmationEmail,
+} from './store/userStore';
 import {
   addAppointment,
   getAllAppointments,
@@ -618,6 +623,19 @@ export default function Client() {
       setLastAppointment(newAppointment);
       setBookingState('success');
 
+      void sendBookingConfirmationEmail({
+        bookingId: newAppointment.id,
+        shopName: newAppointment.shopName,
+        shopAddress: selectedShop.address,
+        shopCity: selectedShop.city,
+        barberName: newAppointment.barberName,
+        serviceName: newAppointment.serviceName,
+        startAt: newAppointment.startAt,
+        endAt: newAppointment.endAt,
+        durationMin: newAppointment.durationMin,
+        price: newAppointment.price,
+      });
+
       setShowNewBooking(false);
       setShowAppointments(true);
       resetBookingSelections();
@@ -680,6 +698,22 @@ export default function Client() {
         : appointment
     );
     setAppointments(getAppointmentsForClient(currentUserEmail));
+    const cancelledShop = SHOPS.find((shop) => shop.id === target.shopId);
+
+    void sendBookingCancellationEmail({
+      bookingId: target.id,
+      shopName: target.shopName,
+      shopAddress: cancelledShop?.address,
+      shopCity: cancelledShop?.city,
+      barberName: target.barberName,
+      serviceName: target.serviceName,
+      startAt: target.startAt,
+      endAt: target.endAt,
+      durationMin: target.durationMin,
+      price: target.price,
+      cancelledReason: finalReason,
+      cancelledAt: Date.now(),
+    });
 
     closeCancelModal();
 

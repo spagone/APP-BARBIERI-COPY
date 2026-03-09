@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=mybarber
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mybarber?schema=public
+      - JWT_SECRET=change-me-to-a-long-random-secret
+      - JWT_ACCESS_EXPIRES=15m
+      - JWT_REFRESH_EXPIRES_DAYS=30
+      - CORS_ORIGINS=http://localhost:8081,http://localhost:19006,http://localhost:4173
+      - TRUST_PROXY=false
+      - ADMIN_API_KEY=change-me-for-admin-users-endpoint
+      - ADMIN_BOOTSTRAP_NAME=MyBarber Super Admin
+      - ADMIN_BOOTSTRAP_EMAIL=admin@barberapp.com
+      - ADMIN_BOOTSTRAP_PASSWORD=ChangeMe_1234
+
+volumes:
+  postgres_data:

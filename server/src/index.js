@@ -1,31 +1,65 @@
-const express = require('express');
-const cors = require('cors');
-const mongoose = require('mongoose');
 require('dotenv').config();
 
-const app = express();
+const { ensureAdminUser } = require('./bootstrap/ensureAdminUser');
+const { createApp } = require('./app');
+const { env, validateEnv } = require('./config/env');
+const { setDbReady } = require('./lib/dbState');
+const { prisma } = require('./lib/prisma');
 
-// MIDDLEWARE
-app.use(cors());
-app.use(express.json());
+const startServer = async () => {
+  try {
+    validateEnv();
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+    return;
+  }
 
-// 🔗 CONNECT MONGODB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  if (!env.jwtSecret) {
+    console.warn('JWT_SECRET non impostata: in uso una chiave dev non sicura.');
+  }
 
-// ROUTES
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
+  const app = createApp();
 
-// TEST ROUTE
-app.get('/', (req, res) => {
-  res.send('API MyBarber ONLINE');
-});
+  try {
+    await prisma.$connect();
+    setDbReady(true);
+    console.log('PostgreSQL connected');
 
-// SERVER
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    const bootstrapResult = await ensureAdminUser();
+    if (bootstrapResult.created) {
+      console.log('Admin bootstrap user created.');
+    }
+
+    const server = app.listen(env.port, () => {
+      console.log(`Server running on port ${env.port}`);
+    });
+
+    const shutdown = async (signal) => {
+      console.log(`${signal} ricevuto, shutdown in corso...`);
+      setDbReady(false);
+
+      try {
+        await prisma.$disconnect();
+      } finally {
+        server.close(() => process.exit(0));
+      }
+    };
+
+    process.on('SIGINT', () => void shutdown('SIGINT'));
+    process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  } catch (err) {
+    setDbReady(false);
+    if (err && err.code === 'P1001') {
+      console.error('Database connection error: impossibile raggiungere PostgreSQL.');
+      console.error(
+        'Controlla DATABASE_URL e che il DB sia online (se cloud, usa sslmode=require).'
+      );
+    } else {
+      console.error('Database connection error:', err);
+    }
+    process.exit(1);
+  }
+};
+
+startServer();
