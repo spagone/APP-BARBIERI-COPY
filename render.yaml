@@ -4,7 +4,6 @@ services:
     runtime: node
     rootDir: server
     buildCommand: npm ci && npm run prisma:generate
-    preDeployCommand: npm run prisma:push
     startCommand: npm start
     plan: free
     autoDeploy: true
