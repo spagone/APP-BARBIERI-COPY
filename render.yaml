@@ -56,19 +56,19 @@ services:
       - key: FACEBOOK_APP_SECRET
         sync: false
 
-  - type: static
+  - type: web
     name: mybarber-admin
+    runtime: static
     rootDir: admin-dashboard
     staticPublishPath: .
-    plan: free
     autoDeploy: true
 
-  - type: static
+  - type: web
     name: mybarber-app
+    runtime: static
     rootDir: barber-app
     buildCommand: npm ci && npx expo export --platform web --output-dir dist
     staticPublishPath: dist
-    plan: free
     autoDeploy: true
     envVars:
       - key: EXPO_PUBLIC_API_BASE_URL
