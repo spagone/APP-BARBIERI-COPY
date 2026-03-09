@@ -73,3 +73,22 @@ cmd /c npx expo start -c
 3. Registrazione utente da app = OK
 4. Email benvenuto/reset/prenotazione = ricevute
 5. Dashboard si aggiorna live (auto-refresh)
+
+## 6) Deploy con comando unico (VSCode)
+
+Se hai gia configurato Auto-Deploy su Render/Vercel:
+
+```powershell
+cd C:\Users\Andre\Desktop\APP-BARBIERI
+.\deploy-online.ps1 "update home"
+```
+
+Oppure da VSCode:
+- `Terminal -> Run Task -> Deploy Online`
+
+Il comando fa:
+1. `git add -A`
+2. `git commit`
+3. `git push`
+
+Al push parte il deploy online automatico.

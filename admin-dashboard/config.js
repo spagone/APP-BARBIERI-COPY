@@ -1,3 +1,3 @@
 window.MYBARBER_CONFIG = {
-  apiBaseUrl: 'http://localhost:5000',
+  apiBaseUrl: 'https://1cffe4841845e1.lhr.life',
 };
