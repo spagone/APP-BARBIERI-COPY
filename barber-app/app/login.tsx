@@ -16,10 +16,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
-import { useAuthRequest } from 'expo-auth-session/build/AuthRequestHooks';
-import { makeRedirectUri } from 'expo-auth-session/build/AuthSession';
-import { ResponseType } from 'expo-auth-session/build/AuthRequest.types';
-import type { DiscoveryDocument } from 'expo-auth-session/build/Discovery';
+import { makeRedirectUri, ResponseType, useAuthRequest, type DiscoveryDocument } from 'expo-auth-session';
 import {
   authenticateUser,
   authenticateWithSocial,
@@ -40,8 +37,31 @@ const SERIF = Platform.select({
 });
 const HERO_IMAGE =
   'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1400&q=80';
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
-const FACEBOOK_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID?.trim() ?? '';
+
+const GOOGLE_DEFAULT_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim() ?? '';
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID?.trim() ?? '';
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID?.trim() ?? '';
+const GOOGLE_CLIENT_ID =
+  Platform.select({
+    ios: GOOGLE_IOS_CLIENT_ID || GOOGLE_DEFAULT_CLIENT_ID,
+    android: GOOGLE_ANDROID_CLIENT_ID || GOOGLE_DEFAULT_CLIENT_ID,
+    default: GOOGLE_WEB_CLIENT_ID || GOOGLE_DEFAULT_CLIENT_ID,
+  }) ?? GOOGLE_DEFAULT_CLIENT_ID;
+
+const FACEBOOK_DEFAULT_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID?.trim() ?? '';
+const FACEBOOK_IOS_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_IOS_APP_ID?.trim() ?? '';
+const FACEBOOK_ANDROID_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_ANDROID_APP_ID?.trim() ?? '';
+const FACEBOOK_WEB_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_WEB_APP_ID?.trim() ?? '';
+const FACEBOOK_APP_ID =
+  Platform.select({
+    ios: FACEBOOK_IOS_APP_ID || FACEBOOK_DEFAULT_APP_ID,
+    android: FACEBOOK_ANDROID_APP_ID || FACEBOOK_DEFAULT_APP_ID,
+    default: FACEBOOK_WEB_APP_ID || FACEBOOK_DEFAULT_APP_ID,
+  }) ?? FACEBOOK_DEFAULT_APP_ID;
+
+const readTokenValue = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+
 const GOOGLE_DISCOVERY: DiscoveryDocument = {
   authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenEndpoint: 'https://oauth2.googleapis.com/token',
@@ -70,6 +90,7 @@ export default function Login() {
     () =>
       makeRedirectUri({
         scheme: 'barberapp',
+        path: 'oauthredirect',
       }),
     []
   );
@@ -184,7 +205,9 @@ export default function Login() {
 
   const handleGoogleLogin = async () => {
     if (!GOOGLE_CLIENT_ID) {
-      setErrorMessage('Google login non configurato. Imposta EXPO_PUBLIC_GOOGLE_CLIENT_ID.');
+      setErrorMessage(
+        'Google login non configurato. Imposta EXPO_PUBLIC_GOOGLE_CLIENT_ID (o *_IOS/_ANDROID/_WEB).'
+      );
       return;
     }
 
@@ -200,7 +223,8 @@ export default function Login() {
       const response = await promptGoogleAsync();
       if (response.type !== 'success') return;
 
-      const idToken = typeof response.params.id_token === 'string' ? response.params.id_token : '';
+      const idToken =
+        readTokenValue(response.params.id_token) || readTokenValue(response.authentication?.idToken);
       if (!idToken) {
         setErrorMessage('Google non ha restituito un idToken valido.');
         return;
@@ -219,7 +243,9 @@ export default function Login() {
 
   const handleFacebookLogin = async () => {
     if (!FACEBOOK_APP_ID) {
-      setErrorMessage('Facebook login non configurato. Imposta EXPO_PUBLIC_FACEBOOK_APP_ID.');
+      setErrorMessage(
+        'Facebook login non configurato. Imposta EXPO_PUBLIC_FACEBOOK_APP_ID (o *_IOS/_ANDROID/_WEB).'
+      );
       return;
     }
 
@@ -235,7 +261,8 @@ export default function Login() {
       const response = await promptFacebookAsync();
       if (response.type !== 'success') return;
 
-      const accessToken = typeof response.params.access_token === 'string' ? response.params.access_token : '';
+      const accessToken =
+        readTokenValue(response.params.access_token) || readTokenValue(response.authentication?.accessToken);
       if (!accessToken) {
         setErrorMessage('Facebook non ha restituito un accessToken valido.');
         return;

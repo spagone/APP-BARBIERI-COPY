@@ -158,6 +158,73 @@ describe('Auth routes', () => {
     expect(mockedUser.save).toHaveBeenCalled();
   });
 
+  it('logs in with apple social token and links provider id', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'apple',
+      providerUserId: 'apple-sub-123',
+      email: 'mario@mail.com',
+      name: 'Mario Rossi',
+      emailVerified: true,
+    });
+
+    const mockedUser = {
+      _id: 'user-1',
+      name: 'Mario Rossi',
+      email: 'mario@mail.com',
+      role: 'client',
+      password: 'hashed-password',
+      appleSub: undefined,
+      emailVerified: false,
+      loginCount: 0,
+      save: jest.fn().mockResolvedValue(true),
+    };
+
+    User.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(mockedUser);
+
+    const response = await request(app).post('/api/auth/social-login').send({
+      provider: 'apple',
+      identityToken: 'apple-identity-token',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.user.email).toBe('mario@mail.com');
+    expect(response.body.user.role).toBe('client');
+    expect(mockedUser.appleSub).toBe('apple-sub-123');
+    expect(mockedUser.save).toHaveBeenCalled();
+  });
+
+  it('creates a new user with facebook social login when email is not registered', async () => {
+    verifySocialIdentity.mockResolvedValue({
+      provider: 'facebook',
+      providerUserId: 'facebook-id-123',
+      email: 'new@mail.com',
+      name: 'Nuovo Cliente',
+      emailVerified: true,
+      avatarUri: 'https://example.com/avatar.jpg',
+    });
+
+    User.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+
+    const response = await request(app).post('/api/auth/social-login').send({
+      provider: 'facebook',
+      accessToken: 'facebook-access-token',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.isNewUser).toBe(true);
+    expect(response.body.user.email).toBe('new@mail.com');
+    expect(response.body.user.role).toBe('client');
+    expect(User).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Nuovo Cliente',
+        email: 'new@mail.com',
+        role: 'client',
+        emailVerified: true,
+        avatarUri: 'https://example.com/avatar.jpg',
+      })
+    );
+  });
+
   it('returns social token error on invalid provider token', async () => {
     verifySocialIdentity.mockRejectedValue(
       new SocialAuthError('SOCIAL_TOKEN_INVALID', 'Token social non valido.', 401)
